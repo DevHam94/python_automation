@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment
+from openpyxl.utils import get_column_letter
 
 
 class WeeklyWorkPlan:
@@ -22,6 +24,7 @@ class WeeklyWorkPlan:
         self.set_date(days=days)
         self.set_title()
         self.set_table()
+        self.set_style()
 
     def save(self, filename):
         self.wb.save(filename)
@@ -100,6 +103,27 @@ class WeeklyWorkPlan:
         # A열 너비
         ws.column_dimensions['A'].width = 5
 
+        # 열 제목 B C D E F
+        for i in range(2, 7):
+            # print('get_column_letter:', i, get_column_letter(i))
+            ws.column_dimensions[get_column_letter(i)].width = 15
+            ws[f'{get_column_letter(i)}8'].font = Font(name='맑은 고딕', bold=True)
+            ws[f'{get_column_letter(i)}8'].alignment = Alignment(horizontal='center', vertical='center')
+
+        # E열 너비
+        ws.column_dimensions['E'].width = 40
+
+        # 제목, 글꼴, 사이즈
+        ws['B5'].font = Font(name='맑은 고딕', size=28, bold=True)
+
+        # 가운데 정렬
+        ws['B5'].alignment = Alignment(horizontal='center', vertical='center')
+        ws['B6'].alignment = Alignment(horizontal='center', vertical='center')
+
+        # 날짜 요일 가운데 정렬
+        for i in range(9, 40, 5):
+            ws[f'B{i}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws[f'C{i}'].alignment = Alignment(horizontal='center', vertical='center')
 
 if __name__ == '__main__':
     wwp = WeeklyWorkPlan('2023-09-04', '김패캠', days=4)
