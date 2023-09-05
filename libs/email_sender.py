@@ -1,5 +1,7 @@
 import os
 import smtplib
+from datetime import datetime
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr
 
@@ -25,18 +27,13 @@ class EmailSender:
         self.smtp_server = self.smtp_server_map[email_addr.split('@')[1]]
         self.template_filename = template_filename
 
-    def send_email(self, msg, from_addr, to_addr, receiver_name, subject):
-        '''
-        :param msg: 보낼 메세지
-        :param from_addr: 보내는 사람
-        :param to_addr: 받는 사람
-        :return:
-        '''
+    def send_email(self, html_msg, from_addr, to_addr, receiver_name, subject):
         with smtplib.SMTP(self.smtp_server, 587) as smtp:
-            msg = MIMEText(msg)
+            msg = MIMEMultipart('alternative')
             msg['From'] = formataddr((self.manager_name, from_addr))
             msg['To'] = formataddr((receiver_name, to_addr))
-            msg['Subject'] = subject
+            msg['Subject'] = subject + str(datetime.now())
+            msg.attach(MIMEText(html_msg, 'html', 'utf-8'))
             print(msg.as_string())
 
             smtp.starttls()
@@ -50,20 +47,18 @@ class EmailSender:
         ws = wb.active
 
         for row in ws.iter_rows(min_row=2):
-            temp1 = ""
-            with open(self.template_filename, encoding='utf-8') as f:
-                temp1 = f.read()
-
-            print('temp1:', temp1)
-
             if row[0].value != None:
-                print(row[0].value, row[1].value, row[2].value)
-                temp1 = temp1.replace('%받는분%', row[1].replace)
-                temp1 = temp1.replace('%매니저_이름%', self.manager_name)
-                self.send_email(msg=temp1,
-                              from_addr=self.email_addr,
-                              to_addr=row[0].value, receiver_name=row[1].value,
-                                subject=row[2].value)
+                with open(self.template_filename, encoding='utf-8') as f:
+                    temp1 = f.read()
+                    print(row[0].value, row[1].value, row[2].value)
+                    temp1 = temp1.replace('%받는분%', row[1].replace)
+                    temp1 = temp1.replace('%매니저_이름%', self.manager_name)
+                    self.send_email(html_msg=temp1,
+                                    from_addr=self.email_addr,
+                                    to_addr=row[0].value, receiver_name=row[1].value,
+                                    subject=row[2].value)
+            else:
+                print('row[0]이 None입니다.')
 
 if __name__ == '__main__':
     es = EmailSender('fc.krkim@gmail.com', os.getenv('MY_GMAIL_PASSWORD'), manager_name='김미령')
