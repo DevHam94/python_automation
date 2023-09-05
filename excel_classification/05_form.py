@@ -4,7 +4,8 @@ from datetime import datetime
 import pandas as pd
 import openpyxl
 from openpyxl.reader.excel import load_workbook
-from openpyxl.styles import Font, Alignment
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.utils import get_column_letter
 
 
 # pd.set_option('display.max_columns', None)
@@ -48,7 +49,7 @@ class ClassificationExcel:
 
             if partner_name != '':
                 df_filtered = self.order_list[self.order_list['상품명'].str.contains(brand_name)]
-                df_filtered.to_excel(f'{self.path}/[패스트몰] {partner_name}.xlsx')
+                df_filtered.to_excel(f'{self.path}/[패스트몰] {partner_name}.xlsx', index=False)
             else:
                 print('없는 brand name:', brand_name, row['상품명'])
 
@@ -72,6 +73,36 @@ class ClassificationExcel:
         ws.merget_cells('A1:U1')
         ws['A1'].alignment = Alignment(horizontal='left')
 
+        # 열 너비 지정
+        # 1~25
+        for i in range(1, 25 + 1):
+            ws.column_dimensions[get_column_letter(i)].width = 13
+
+        for col_letter in ['I', 'J', 'K', 'X']:
+            ws.column_dimensions[col_letter].width = 40
+
+        for col_letter in ['A', 'V', 'H']:
+            ws.column_dimensions[col_letter].width = 26
+
+        # 컬럼명
+        for row in ws.iter_rows(min_row=3, max_row=3):
+            for cell in row:
+                cell.fill =PatternFill(fgColor='B2B2B2', fill_type='solid')
+
+        # 주문 목록
+        for row in ws.iter_rows(min_row=4):
+            for cell in row:
+                cell.alignment = Alignment(wrap_text=True, horizontal='center', vertical='center', shrink_to_fit=True)
+                cell.fill =PatternFill(fgColor='FFFFCC', fill_type='solid')
+                cell.border = Border(
+                    left=Side(style='thin'),
+                    right=Side(style='thin'),
+                    top=Side(style='thin'),
+                    bottom=Side(style='thin')
+                )
+
+
+
         wb.save(filename)
         
     def set_forms(self):
@@ -84,6 +115,6 @@ class ClassificationExcel:
 
 if __name__ == '__main__':
     ce = ClassificationExcel('주문목록20221112.xlsx', '파트너목록.xlsx', '20221113')
-    # ce.classify()
+    ce.classify()
     ce.set_forms()
 
