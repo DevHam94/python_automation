@@ -2,6 +2,7 @@ import copy
 import pandas as pd
 from pptx import Presentation
 import openpyxl
+from pptx.util import Pt
 
 
 class PowerPointAutoLabel:
@@ -40,13 +41,19 @@ class PowerPointAutoLabel:
             shape_map[shape.name] = i
         return shape_map
 
-    def change_text(self, slide_no, label_map):
+    def change_text(self, slide_no, label_map, font_size=30):
         slide = self.ppt_file.slides[slide_no]
         shape_map = self.get_shape_map(slide_no)
 
         for shape_name, text in label_map.items():
             shape_no = shape_map[shape_name]
-            slide.shapes[shape_no].text = text
+            # slide.shapes[shape_no].text = text
+            text_frame = slide.shapes[shape_no].text_frame
+            text_frame.clear()
+            p = text_frame.paragraphs[0]
+            run = p.add_run()
+            run.text = text
+            run.font.size = Pt(font_size)
 
 
 if __name__ == '__main__':
@@ -66,9 +73,7 @@ if __name__ == '__main__':
 
     for i, row in df.iterrows():
         print(i, row['product_name'], row['model_no'])
-        label_map = {
-            "product_name":row['product_name'], "model_no":row['model_no']
-        }
-        ppt_al.change_text(0, label_map)
+        ppt_al.change_text(i, {"product_name":row['product_name']}, 32)
+        ppt_al.change_text(i, {"model_no":row['model_no']}, 20)
 
-    # ppt_al.save("[Auto]재물조사표.pptx")
+    ppt_al.save("[Auto]재물조사표.pptx")

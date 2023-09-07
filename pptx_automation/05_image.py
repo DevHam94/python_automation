@@ -1,7 +1,10 @@
 import copy
+import os
+
 import pandas as pd
 from pptx import Presentation
 import openpyxl
+from pptx.util import Pt
 
 
 class PowerPointAutoLabel:
@@ -21,10 +24,24 @@ class PowerPointAutoLabel:
 
         to_slide = self.ppt_file.slides.add_slide(self.ppt_file.slide_layouts[slide_layout_no])
 
+        img_dict = {}
         for shape in from_slide.shapes:
-            el = shape.element
-            new_element = copy.deepcopy(el)
-            to_slide.shapes._spTree.insert_element_before(new_element, 'p:extLst')
+            if "Picture" in shape.name:
+                print('shape.name:', shape.name)
+                image_filename = shape.name + '.jpg'
+                with open(shape.name, ',jpg', 'wb') as f:
+                    f.wrie(shape.image.blob)
+                img_dict[image_filename] = [shape.left, shape.top, shape.width, shape.height]
+            else:
+                el = shape.element
+                new_element = copy.deepcopy(el)
+                to_slide.shapes._spTree.insert_element_before(new_element, 'p:extLst')
+
+        # image 복사
+        for key, value in img_dict.items():
+            to_slide.shapes.add_picture(key, value[0], value[1], value[2], value[3])
+            os.remove(key)
+
 
     def duplicate_n_slides(self, slide_cnt, from_slide_no):
         for _ in range(slide_cnt - 1):
@@ -40,17 +57,22 @@ class PowerPointAutoLabel:
             shape_map[shape.name] = i
         return shape_map
 
-    def change_text(self, slide_no, label_map):
+    def change_text(self, slide_no, label_map, font_size=30):
         slide = self.ppt_file.slides[slide_no]
         shape_map = self.get_shape_map(slide_no)
 
         for shape_name, text in label_map.items():
             shape_no = shape_map[shape_name]
-            slide.shapes[shape_no].text = text
+            # slide.shapes[shape_no].text = text
+            text_frame = slide.shapes[shape_no].text_frame
+            text_frame.clear()
+            p = text_frame.paragraphs[0]
+            run = p.add_run()
+            run.text = text
+            run.font.size = Pt(font_size)
 
 
 if __name__ == '__main__':
-    ppt_al = PowerPointAutoLabel("재물 조사표.pptx")
     # #ppt_al.print_slide_shapes(0)
     # ppt_al.duplicate_n_slides(1)
     # ppt_al.change_text(0, {"product_name":"32인치 게이밍 모니터 ", "Model_no":"MO11223344"})
@@ -58,17 +80,18 @@ if __name__ == '__main__':
     # # ppt_al.print_slide_shapes(0)
     # ppt_al.save("[Auto]재물조사표.pptx")
 
+    ppt_al = PowerPointAutoLabel("재물 조사표.pptx")
+    # ppt_al.duplicate_n_slides(2)
+    # ppt_al.save("[Auto]재물조사표.pptx")
+
     df = pd.read_excel("재물목록.xlsx")
-    print(df)
+    # print(df)
     print("count", df["product_name"].count())
     slide_cnt = df["product_name"].count()
-    ppt_al.duplicate_n_slides(slide_cnt - 1)
 
     for i, row in df.iterrows():
         print(i, row['product_name'], row['model_no'])
-        label_map = {
-            "product_name":row['product_name'], "model_no":row['model_no']
-        }
-        ppt_al.change_text(0, label_map)
+        ppt_al.change_text(i, {"product_name":row['product_name']}, 32)
+        ppt_al.change_text(i, {"model_no":row['model_no']}, 20)
 
-    # ppt_al.save("[Auto]재물조사표.pptx")
+    ppt_al.save("[Auto]재물조사표_1400_with_image.pptx")
