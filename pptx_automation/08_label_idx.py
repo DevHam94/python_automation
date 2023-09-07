@@ -88,14 +88,21 @@ if __name__ == '__main__':
     # print(df)
     print("count", df["product_name"].count())
     slide_cnt = df["product_name"].count()
-    ppt_al.duplicate_n_slides(slide_cnt // 4)
+    # 나머지가 없는 경우 - 1
+    if slide_cnt % 4 == 0:
+        ppt_al.duplicate_n_slides(slide_cnt // 4 - 1)
+    else:
+        ppt_al.duplicate_n_slides(slide_cnt // 4)
 
     for i, row in df.iterrows():
         # 0을 4로 나눈 몫, 1을 4로 나눈 몫
         page = i // 4 # 0000 1111 2222 3333
+        # 나머지
+        label_idx = (i % 4) + 1 # 1234 1234 1234 1234
 
         # print(i, row['product_name'], row['model_no'])
-        ppt_al.change_text(page, {f"product_name_{i}": row['product_name']}, 32)
-        ppt_al.change_text(page, {f"model_no_{i}": row['model_no']}, 20)
+        ppt_al.change_text(page, {f"product_name_{label_idx}": row['product_name'],
+                                  f"model_no_{label_idx}": row['model_no']
+                                  }, 20)
 
     ppt_al.save("[Auto]재물조사표_n_labels.pptx")
