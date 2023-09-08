@@ -4,3 +4,5 @@ import pyperclip
 x, y = pg.position()
 print(x, y)
 
+print(pg.KEYBOARD_KEYS)
+pg.hotkey('esc')
